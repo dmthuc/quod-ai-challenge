@@ -172,8 +172,9 @@ class PullRequestEventPayLoad {
 		JSONObject obj = new JSONObject(_jsonString);
         JSONObject payLoadObj = obj.getJSONObject("payload");
         action = toAction(payLoadObj.getString("action")); 
-        pullRequestId = payLoadObj.getJSONObject("pull_request").getLong("id");
-        merged = payLoadObj.getBoolean("merged");
+        JSONObject pullRequestObj = payLoadObj.getJSONObject("pull_request");
+        pullRequestId = pullRequestObj.getLong("id");
+        merged = pullRequestObj.getBoolean("merged");
     }
 
     public Action getAction() {

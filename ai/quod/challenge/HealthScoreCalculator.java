@@ -39,6 +39,7 @@ class Calculator {
 
     public void dumpResultToCSV(String filename) throws IOException{
         TreeMap<Float, RepoHealthScoreCalculator> sortedMap = new TreeMap<Float, RepoHealthScoreCalculator>(java.util.Collections.reverseOrder());
+        //TreeMap<Float, RepoHealthScoreCalculator> sortedMap = new TreeMap<Float, RepoHealthScoreCalculator>();
         int maxCommitCounter = 0;
         float maxNumberOfCommitPerDeveloper = 0; 
         float minAverageIssueOpenTime = Float.MAX_VALUE;
@@ -73,8 +74,13 @@ class Calculator {
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename, true))) {
             writer.write(RepoHealthScoreCalculator.CSVHeader() + '\n');
+            int lineCounter = 0;
             for (RepoHealthScoreCalculator r : sortedMap.values()) {
+                ++lineCounter;
                 writer.write(r.toCSVData() + '\n');
+                if (lineCounter == 1000) {
+                    break;
+                }
             }
             writer.close();
         }

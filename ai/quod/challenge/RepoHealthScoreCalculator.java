@@ -36,7 +36,7 @@ class RepoHealthScoreCalculator {
     }
 
     public void consumePullRequestEvent(Event event, PullRequestEventPayLoad payload) {
-
+        pullRequestAverageMergeTimeScoreCalculator.consumePullRequestEvent(event, payload);
     }
 
     public NumberOfCommitPerDayScoreCalculator getNumberOfCommitPerDayScoreCalculator() {
@@ -65,11 +65,18 @@ class RepoHealthScoreCalculator {
     }
 
     public static String CSVHeader() {
-        return "org,repo_name,health_score,num_commits"; 
+        return "org,repo_name,health_score,num_commits,number_of_commit_per_day,number_of_commit_per_developer,average_issue_open_time,pull_request_average_merge_time"; 
     }
     
     public String toCSVData() {
-        return escapeString(repo.getOrgName()) + ',' + escapeString(repo.getName()) + ',' + score + ',' + numberOfCommitPerDayScoreCalculator.getCommitCounter();
+        return escapeString(repo.getOrgName()) + ',' + 
+                escapeString(repo.getName()) + ',' + 
+                score + ',' + 
+                numberOfCommitPerDayScoreCalculator.getCommitCounter() + ',' + 
+                numberOfCommitPerDayScoreCalculator.getNumberOfCommitPerDay() + ',' + 
+                numberOfCommitPerDeveloperScoreCalculator.getNumberOfCommitPerDeveloper() + ',' +
+                averageIssueOpenTimeScoreCalculator.getAverageOpenTime() + ',' +
+                pullRequestAverageMergeTimeScoreCalculator.getAverageMergeTime();
     }
     
     private Repo repo;
@@ -124,6 +131,10 @@ class NumberOfCommitPerDayScoreCalculator {
         return commitCounter;
     }
 
+    public float getNumberOfCommitPerDay() {
+        return (float) commitCounter/ numberOfDay;
+    }
+
     public float getScore(int maxCommitCounter) {
         if (maxCommitCounter == 0) {
             return 0;
@@ -146,11 +157,14 @@ class NumberOfCommitPerDeveloperScoreCalculator {
     }
     
     public float getNumberOfCommitPerDeveloper() {
+        if (actorIds.size() == 0) {
+            return 0;
+        }
         return (float) commitCounter/ actorIds.size();
     }
 
     public float getScore(float maxNumberOfCommitPerDeveloper) {
-        if (maxNumberOfCommitPerDeveloper == 0) {
+        if (maxNumberOfCommitPerDeveloper == 0 || actorIds.size() == 0) {
             return 0;
         }
 
@@ -187,9 +201,14 @@ class AverageIssueOpenTimeScoreCalculator {
         }
 
         long totalOpentime = 0;
-        for (OpenTimeCalculator c : issueIdToOpenTimeCalculatorMap.values()) {
+
+        for (Map.Entry<Long,OpenTimeCalculator> entry : issueIdToOpenTimeCalculatorMap.entrySet()) {
+            OpenTimeCalculator c = entry.getValue();
             totalOpentime += c.getOpenDuration();
         }
+
+        float res = (float) totalOpentime / issueIdToOpenTimeCalculatorMap.size();
+
         return (float) totalOpentime / issueIdToOpenTimeCalculatorMap.size();
     } 
 
@@ -210,6 +229,7 @@ class AverageIssueOpenTimeScoreCalculator {
 
 class OpenTimeCalculator {
     public OpenTimeCalculator(ZonedDateTime _from, ZonedDateTime _to) {
+        openDuration = 0;
         lastOpenTime = _from;
         to = _to;
         isClosed = false;
@@ -220,15 +240,17 @@ class OpenTimeCalculator {
             lastOpenTime = event.getZonedDateTime(); 
             isClosed = false;
         } else if (payload.getAction() == IssuesEventPayLoad.Action.Closed) {
-            openDuration += ChronoUnit.SECONDS.between(event.getZonedDateTime(), lastOpenTime);
+            openDuration += ChronoUnit.SECONDS.between(lastOpenTime, event.getZonedDateTime());
             isClosed = true;
         }
     }
 
     public long getOpenDuration() {
         if (isClosed == false) {
-            return openDuration += ChronoUnit.SECONDS.between(to, lastOpenTime);
+            openDuration += ChronoUnit.SECONDS.between(lastOpenTime, to);
+            isClosed = true;
         }
+        
 
         return openDuration;
     }
