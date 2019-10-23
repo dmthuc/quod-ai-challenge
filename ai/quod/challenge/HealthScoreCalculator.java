@@ -9,6 +9,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import java.text.DecimalFormat;
 import org.json.JSONException;
+import java.net.URLConnection;
  
 class Calculator {
     Calculator(ZonedDateTime _from, ZonedDateTime _to) {
@@ -39,7 +40,6 @@ class Calculator {
 
     public void dumpResultToCSV(String filename) throws IOException{
         TreeMap<Float, RepoHealthScoreCalculator> sortedMap = new TreeMap<Float, RepoHealthScoreCalculator>(java.util.Collections.reverseOrder());
-        //TreeMap<Float, RepoHealthScoreCalculator> sortedMap = new TreeMap<Float, RepoHealthScoreCalculator>();
         int maxCommitCounter = 0;
         float maxNumberOfCommitPerDeveloper = 0; 
         float minAverageIssueOpenTime = Float.MAX_VALUE;
@@ -131,7 +131,10 @@ public class HealthScoreCalculator {
         }
         
         for (URL url : urls) {
-            try (GZIPInputStream in = new GZIPInputStream(url.openStream())){
+            URLConnection urlc = url.openConnection();
+            urlc.setRequestProperty("User-Agent", "Mozilla 5.0 (Windows; U; "
+                    + "Windows NT 5.1; en-US; rv:1.8.0.11) ");
+            try (GZIPInputStream in = new GZIPInputStream(urlc.getInputStream())){
                 BufferedReader reader = new BufferedReader(new InputStreamReader(in));
                 while(reader.ready()) {
                     String line = reader.readLine();
@@ -157,6 +160,7 @@ public class HealthScoreCalculator {
                         continue;
                     }
                 }
+                reader.close();
             }
         }
         calculator.dumpResultToCSV("health_scores.csv");
