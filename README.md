@@ -14,5 +14,12 @@ If you in linux, you can run those two steps above with `. run.sh`
 
 ### Technical decisions
 - I use a Json package so I could parse json data, I believe this is the most popular package.
-- If I have more time, I would add test for this code. I could also improve algorithm to calculate metrics, this improvement will not make any differences to code structure, just local inside some class.
+- If I have more time, I would have:
+    + Add test for this code. 
+    + Improve algorithm to calculate metrics, this improvement will not make any differences to code structure, just local inside some class. 
+    + Add check to constructors. 
+    + Rename some method from having `get` prefix to `calculate` prefix since it modify state of class. 
+    + Create a separate file for each class instead of a lot of class shared a single file. 
+    + Find new way of download a url since the current way failed to download in some network condition.
+    + Improve exception handling. I do not familiar with style of throwing exception everywhere in Java.
 
